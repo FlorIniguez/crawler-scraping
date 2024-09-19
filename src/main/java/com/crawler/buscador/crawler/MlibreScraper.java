@@ -1,45 +1,38 @@
 package com.crawler.buscador.crawler;
 
 import com.crawler.buscador.models.Product;
+import com.crawler.buscador.utils.ConvertPrice;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class MlibreScraper implements Scraper {
     private static final String URL_BASE = "https://listado.mercadolibre.com.ar/";
 
     @Override
     public List<Product> scrape(String productName) {
-        List <Product> products = new ArrayList<>();
+        List<Product> products = new ArrayList<>();
         try {
-            //creo url de busqueda
-            String searchUrl = URL_BASE + productName + "#D[A:" + productName + "]";
-            //conecto y obtengo el docuemnto
+            String encodedProductName = URLEncoder.encode(productName, StandardCharsets.UTF_8);
+            String searchUrl = URL_BASE + encodedProductName + "#D[A:" + encodedProductName + "]";
             Document doc = Jsoup.connect(searchUrl).get();
-
-            //seleccionar elementos que tienen la info
             Elements productElements = doc.select("li.ui-search-layout__item");
 
-            //proecesar elementos
-            for(Element productElement : productElements){
+            for (Element productElement : productElements) {
                 // Extraer nombre del producto, precio y enlace
                 String name = productElement.select("h2.poly-box a").text();
                 String link = productElement.select("h2.poly-box a").attr("href");
-                String price = productElement.select("span.andes-money-amount__fraction").text();
+                String price = Objects.requireNonNull(productElement.select("span.andes-money-amount__fraction").first()).text();
 
-                // Formatear el precio si es necesario
-                if (price.isEmpty()) {
-                    price = "Precio no disponible";
-                } else {
-                    price = "$" + price;
-                }
-
-
-                products.add(new Product(name, price,link));
+                double priceDouble = ConvertPrice.convertPriceDouble(price);
+                products.add(new Product(name, priceDouble, link));
             }
         } catch (Exception e) {
             e.printStackTrace();
