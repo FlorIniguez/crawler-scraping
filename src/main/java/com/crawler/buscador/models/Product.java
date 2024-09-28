@@ -11,4 +11,5 @@ public class Product {
     private String name;
     private double price;
     private String link;
+    private String logo;
 }

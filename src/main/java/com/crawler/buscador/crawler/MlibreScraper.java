@@ -6,6 +6,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.stereotype.Component;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -13,11 +14,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+@Component
 public class MlibreScraper implements Scraper {
     private static final String URL_BASE = "https://listado.mercadolibre.com.ar/";
 
     @Override
-    public List<Product> scrape(String productName) {
+    public List<Product> searchProduct(String productName) {
+        return scrapeMLibre(productName);
+    }
+
+    public List<Product> scrapeMLibre(String productName) {
         List<Product> products = new ArrayList<>();
         try {
             String encodedProductName = URLEncoder.encode(productName, StandardCharsets.UTF_8);
@@ -30,18 +36,16 @@ public class MlibreScraper implements Scraper {
                 String name = productElement.select("h2.poly-box a").text();
                 String link = productElement.select("h2.poly-box a").attr("href");
                 String price = Objects.requireNonNull(productElement.select("span.andes-money-amount__fraction").first()).text();
+                String logo = "https://http2.mlstatic.com/static/org-img/homesnw/mercado-libre.png?v=2";
 
                 double priceDouble = ConvertPrice.convertPriceDouble(price);
-                products.add(new Product(name, priceDouble, link));
+                if (!name.isEmpty() && !price.isEmpty() && !link.isEmpty()) {
+                    products.add(new Product(name, priceDouble, link,logo));
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
         return products;
-    }
-
-    @Override
-    public List<Product> searchProduct(String productName) {
-        return scrape(productName);
     }
 }

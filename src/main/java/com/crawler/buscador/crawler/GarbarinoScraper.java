@@ -6,19 +6,24 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.stereotype.Component;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+@Component
 public class GarbarinoScraper implements Scraper {
     private static final String URL_BASE = "https://www.garbarino.com/shop?search=";
     private static final String URL_PRODUCT = "https://www.garbarino.com";
 
-
     @Override
-    public List<Product> scrape(String productName) {
+    public List<Product> searchProduct(String productName) {
+        return scrapeGarbarino(productName);
+    }
+
+    public List<Product> scrapeGarbarino(String productName) {
         List<Product> products = new ArrayList<>();
         try {
             // Codificar el nombre del producto para que sea válido en la URL
@@ -34,10 +39,11 @@ public class GarbarinoScraper implements Scraper {
                 String relativeLink = productElement.select("a.card-anchor").attr("href");
                 String link = URL_PRODUCT + relativeLink;
                 String price = productElement.select("div.product-card-design6-vertical__price span:last-child").text();
+                String logo = "https://upload.wikimedia.org/wikipedia/commons/9/96/Perfil-g-sola.png";
 
                 double priceDouble = ConvertPrice.convertPriceDouble(price);
                 if (!name.isEmpty() && !price.isEmpty() && !link.isEmpty()) {
-                    products.add(new Product(name, priceDouble, link));
+                    products.add(new Product(name, priceDouble, link,logo));
                 }
 
             }
@@ -47,9 +53,4 @@ public class GarbarinoScraper implements Scraper {
         return products;
     }
 
-    @Override
-    public List<Product> searchProduct(String productName) {
-
-        return scrape(productName);
-    }
 }
