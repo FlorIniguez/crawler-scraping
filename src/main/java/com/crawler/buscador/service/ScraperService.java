@@ -39,7 +39,9 @@ public class ScraperService {
         //devuelvo producto mas barato y la lista entera ordenada por precio
         Map<String, Object> response = new HashMap<>();
         cheapestProduct.ifPresent(product -> response.put("CheapestProduct", product));
+        //Stream.of convierte cada lista en un flujo de datos, flujo de 3 elementos
         response.put("productList", Stream.of(rodoProducts, mlibreProducts, garbarinoProducts)
+                //con cada lista de flujo, creo un flujo de productos
                 .flatMap(List::stream)
                 .sorted(Comparator.comparing(Product::getPrice))
                 .collect(Collectors.toList()));

@@ -1,5 +1,6 @@
 package com.crawler.buscador.crawler;
 
+import com.crawler.buscador.Exceptions.ScraperException;
 import com.crawler.buscador.models.Product;
 import com.crawler.buscador.utils.ConvertPrice;
 import org.jsoup.Jsoup;
@@ -8,9 +9,11 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 @Component
@@ -32,23 +35,27 @@ public class GarbarinoScraper implements Scraper {
             Document doc = Jsoup.connect(searchUrl).get();
             Elements productElements = doc.select("div.product-card-design6-vertical");
 
+            List<String> queryWords = Arrays.asList(productName.toLowerCase().split(" "));
+
             //proecesar elementos
             for (Element productElement : productElements) {
                 // Extraer nombre del producto, precio y enlace
-                String name = productElement.select("div.product-card-design6-vertical__name").text();
+                String name = productElement.select("div.product-card-design6-vertical__name").text().toLowerCase();
                 String relativeLink = productElement.select("a.card-anchor").attr("href");
                 String link = URL_PRODUCT + relativeLink;
                 String price = productElement.select("div.product-card-design6-vertical__price span:last-child").text();
                 String logo = "https://upload.wikimedia.org/wikipedia/commons/9/96/Perfil-g-sola.png";
 
                 double priceDouble = ConvertPrice.convertPriceDouble(price);
-                if (!name.isEmpty() && !price.isEmpty() && !link.isEmpty()) {
-                    products.add(new Product(name, priceDouble, link,logo));
-                }
+                // Filtrar productos por coincidencia exacta de todas las palabras
+                boolean allWordsMatch = queryWords.stream().allMatch(name::contains);
 
+                if (allWordsMatch && !name.isEmpty() && !price.isEmpty() && !link.isEmpty()) {
+                    products.add(new Product(name, priceDouble, link, logo));
+                }
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (IOException e) {
+           throw new ScraperException("Error al conectarse a Garbarino", e);
         }
         return products;
     }
