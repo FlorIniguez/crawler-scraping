@@ -44,7 +44,7 @@ public class GarbarinoScraper implements Scraper {
                 String relativeLink = productElement.select("a.card-anchor").attr("href");
                 String link = URL_PRODUCT + relativeLink;
                 String price = productElement.select("div.product-card-design6-vertical__price span:last-child").text();
-                String logo = "https://upload.wikimedia.org/wikipedia/commons/9/96/Perfil-g-sola.png";
+                String logo = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSlS0C8BHg2hUQLJ3nVP-sCJ1Rx0XFyMlw-1Q&s";
 
                 double priceDouble = ConvertPrice.convertPriceDouble(price);
                 // Filtrar productos por coincidencia exacta de todas las palabras
@@ -54,8 +54,12 @@ public class GarbarinoScraper implements Scraper {
                     products.add(new Product(name, priceDouble, link, logo));
                 }
             }
+            // Si la lista de productos está vacía, lanzar una excepción personalizada
+            if (products.isEmpty()) {
+                throw new IllegalArgumentException("No results found for: " + productName);
+            }
         } catch (IOException e) {
-           throw new ScraperException("Error al conectarse a Garbarino", e);
+            throw new ScraperException("Error connecting to Garbarino", e);
         }
         return products;
     }
