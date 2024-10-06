@@ -51,9 +51,7 @@ public class RodoScraper implements Scraper {
                     products.add(new Product(name, priceDouble, link, logo));
                 }
             }
-            if (products.isEmpty()) {
-                throw new IllegalArgumentException("No results found for:  " + productName);
-            }
+
         } catch (IOException e) {
             throw new ScraperException("Error connecting to Rodo", e);
         }

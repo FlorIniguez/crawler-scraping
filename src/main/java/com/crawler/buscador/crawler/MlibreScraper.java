@@ -50,9 +50,6 @@ public class MlibreScraper implements Scraper {
                 }
             }
 
-            if (products.isEmpty()) {
-                throw new IllegalArgumentException("No results found for:  " + productName);
-            }
         } catch (IOException e) {
             throw new ScraperException("Error connecting to Mercado Libre", e);
         }

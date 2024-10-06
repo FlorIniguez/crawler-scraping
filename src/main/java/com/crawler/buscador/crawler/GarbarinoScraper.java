@@ -1,5 +1,6 @@
 package com.crawler.buscador.crawler;
 
+import com.crawler.buscador.Exceptions.ProductNotFoundException;
 import com.crawler.buscador.Exceptions.ScraperException;
 import com.crawler.buscador.models.Product;
 import com.crawler.buscador.utils.ConvertPrice;
@@ -54,10 +55,7 @@ public class GarbarinoScraper implements Scraper {
                     products.add(new Product(name, priceDouble, link, logo));
                 }
             }
-            // Si la lista de productos está vacía, lanzar una excepción personalizada
-            if (products.isEmpty()) {
-                throw new IllegalArgumentException("No results found for: " + productName);
-            }
+
         } catch (IOException e) {
             throw new ScraperException("Error connecting to Garbarino", e);
         }

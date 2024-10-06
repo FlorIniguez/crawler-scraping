@@ -1,5 +1,6 @@
 package com.crawler.buscador.service;
 
+import com.crawler.buscador.Exceptions.ProductNotFoundException;
 import com.crawler.buscador.crawler.GarbarinoScraper;
 import com.crawler.buscador.crawler.MlibreScraper;
 import com.crawler.buscador.crawler.RodoScraper;
@@ -32,8 +33,9 @@ public class ScraperService {
         List<Product> rodoProducts = rodoScraper.searchProduct(productName);
 
         if (rodoProducts.isEmpty() && mlibreProducts.isEmpty() && garbarinoProducts.isEmpty()) {
-            return Collections.singletonMap("mesagge", "No se encontroraron productos para: " + productName);
+            throw new ProductNotFoundException(productName);
         }
+
         Optional<Product> cheapestProduct = priceComparator(garbarinoProducts, mlibreProducts, rodoProducts);
 
         //devuelvo producto mas barato y la lista entera ordenada por precio
@@ -46,10 +48,7 @@ public class ScraperService {
                 .sorted(Comparator.comparing(Product::getPrice))
                 .collect(Collectors.toList()));
         return response;
-
     }
-
-
 }
 
 

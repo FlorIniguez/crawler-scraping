@@ -15,15 +15,11 @@ public class PriceComparator {
         List<Product> allProducts = Stream.of(listStore1, listStore2, listStore3)
                 .flatMap(List::stream)
                 .toList();
-
         // Encontrar el producto más barato
         return allProducts.stream()
                 .filter(product -> product.getPrice() > 0)
                 .min(Comparator.comparingDouble(Product::getPrice));
-
     }
-
-
 }
 
 
