@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -28,26 +30,45 @@ public class ScraperService {
     PriceComparator priceComparator;
 
     public Map<String, Object> searchAndDisplay(String productName) {
-        List<Product> garbarinoProducts = garbarinoScraper.searchProduct(productName);
-        List<Product> mlibreProducts = mlibreScraper.searchProduct(productName);
-        List<Product> rodoProducts = rodoScraper.searchProduct(productName);
+        // Crear los CompletableFutures para cada scraper
+        CompletableFuture<List<Product>> garbarinoFuture = CompletableFuture.supplyAsync(() -> garbarinoScraper.searchProduct(productName));
+        CompletableFuture<List<Product>> mlibreFuture = CompletableFuture.supplyAsync(() -> mlibreScraper.searchProduct(productName));
+        CompletableFuture<List<Product>> rodoFuture = CompletableFuture.supplyAsync(() -> rodoScraper.searchProduct(productName));
 
-        if (rodoProducts.isEmpty() && mlibreProducts.isEmpty() && garbarinoProducts.isEmpty()) {
-            throw new ProductNotFoundException(productName);
+        // Unir todos los futures en uno solo que espera a que todos terminen
+        CompletableFuture<Void> allFutures = CompletableFuture.allOf(garbarinoFuture, mlibreFuture, rodoFuture);
+
+        // Esperar que todos los futures se completen y luego obtener los resultados
+        try {
+            // Este bloque espera que todos los futures terminen
+            allFutures.join();
+
+            // Obtener los resultados de cada Future
+            List<Product> garbarinoProducts = garbarinoFuture.get();
+            List<Product> mlibreProducts = mlibreFuture.get();
+            List<Product> rodoProducts = rodoFuture.get();
+
+            // Si todos están vacíos, lanza la excepción
+            if (garbarinoProducts.isEmpty() && mlibreProducts.isEmpty() && rodoProducts.isEmpty()) {
+                throw new ProductNotFoundException(productName);
+            }
+
+            // Encontrar el producto más barato
+            Optional<Product> cheapestProduct = priceComparator(garbarinoProducts, mlibreProducts, rodoProducts);
+
+            // Construir la respuesta con el producto más barato y la lista ordenada
+            Map<String, Object> response = new HashMap<>();
+            cheapestProduct.ifPresent(product -> response.put("CheapestProduct", product));
+            response.put("productList", Stream.of(rodoProducts, mlibreProducts, garbarinoProducts)
+                    .flatMap(List::stream)
+                    .sorted(Comparator.comparing(Product::getPrice))
+                    .collect(Collectors.toList()));
+
+            return response;
+
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException("Error occurred while scraping products", e);
         }
-
-        Optional<Product> cheapestProduct = priceComparator(garbarinoProducts, mlibreProducts, rodoProducts);
-
-        //devuelvo producto mas barato y la lista entera ordenada por precio
-        Map<String, Object> response = new HashMap<>();
-        cheapestProduct.ifPresent(product -> response.put("CheapestProduct", product));
-        //Stream.of convierte cada lista en un flujo de datos, flujo de 3 elementos
-        response.put("productList", Stream.of(rodoProducts, mlibreProducts, garbarinoProducts)
-                //con cada lista de flujo, creo un flujo de productos
-                .flatMap(List::stream)
-                .sorted(Comparator.comparing(Product::getPrice))
-                .collect(Collectors.toList()));
-        return response;
     }
 }
 
